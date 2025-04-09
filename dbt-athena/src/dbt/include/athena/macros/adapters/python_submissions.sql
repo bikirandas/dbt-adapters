@@ -102,7 +102,7 @@ def dq_check(dbt, df, source_count):
         source=data_source,
         source_count=source_count,
         target_table_name=target_table,
-        target_count=target_count
+        target_count=target_count,
         missing_count = int(source_count) - int(target_count),
         audit_datetime=current_timestamp(),
         model_runtime=model_execution_time,
