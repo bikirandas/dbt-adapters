@@ -105,7 +105,6 @@ def dq_check(dbt, df, source_count):
         target_count=target_count,
         missing_count = int(source_count) - int(target_count),
         audit_datetime=current_timestamp(),
-        model_runtime=model_execution_time,
         error_msg=error_msg if error_msg else None
     )
     log_df = spark.createDataFrame([log_row])
