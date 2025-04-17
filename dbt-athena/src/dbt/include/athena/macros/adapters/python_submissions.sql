@@ -85,7 +85,7 @@ def dq_check(dbt, df, source_count):
     dbt_schema = dbt.this.schema
     domain = dbt_schema.split('_')[1]
     data_source = dbt_schema.rsplit('_', maxsplit=1)[-1]
-    invocation_id = f"{dbt.config.get('invocation_id')}"
+    invocation_id = "{{ invocation_id }}"
     audit_table_name = 'dq_audit'
     env = dbt.config.get("target_name", "dev")
     env = "dev" if env == "default" else env
@@ -96,6 +96,7 @@ def dq_check(dbt, df, source_count):
                      .agg(max("dl_load_date")).collect()[0][0]
     target_count = spark.table(target_table) \
                            .filter(col("dl_load_date") == max_load_date).count()
+    print(f"I am printing log data -->", invocation_id, f"dlh_{domain}.{audit_table_name}", env, dbt.config)
     log_row = Row(
         model_name=table_name,
         invocation_id=invocation_id,
@@ -103,15 +104,14 @@ def dq_check(dbt, df, source_count):
         source_count=source_count,
         target_table_name=target_table,
         target_count=target_count,
-        missing_count = int(source_count) - int(target_count),
-        audit_datetime=current_timestamp(),
-        error_msg=error_msg if error_msg else None
+        missing_count = int(source_count) - int(target_count)
     )
     log_df = spark.createDataFrame([log_row])
+    log_df = log_df.withColumn("audit_datetime", current_timestamp())
     log_df.write \
           .format("parquet") \
           .mode("append") \
-          .saveAsTable(f"{dbt_schema}.{audit_table_name}")
+          .saveAsTable(f"dlh_{domain}.{audit_table_name}")
 
 dbt = SparkdbtObj()
 df = model(dbt, spark)
